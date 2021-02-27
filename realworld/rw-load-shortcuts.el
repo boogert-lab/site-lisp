@@ -10,7 +10,7 @@
   :group 'rw-custom-group
   :type  'file)
 
-(defun rw-load-handig ()
+(defun rw-load-shortcuts ()
   "Loads magik/shortcuts.magik"
   (interactive)
   (let*

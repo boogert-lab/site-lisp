@@ -32,7 +32,7 @@
 (sw-multi-define-key
  (list sw-f2-map gis-f2-map magik-f2-map) "x" 'dev-tools-object-inspector)
 
-(define-key sw-f2-map "H" 'rw-load-handig)
+(define-key sw-f2-map "H" 'rw-load-shortcuts)
 
 (define-key global-map (kbd "M-f") 'rw-findstr)
 
