@@ -240,8 +240,7 @@ a template type to use for normal magik files.
 							     (caar option-list))
 					    option-list)))))
 	  (setq magik-template-file-type (or type magik-template-file-type-default))
-
-	  (setq-default magik-template-file-type nil) ; reset default value
+;;	  (setq-default magik-template-file-type nil) ; reset default value
 	  (setq template-file (magik-template-file magik-template-file-type))
 	  (if (and template-file
 		   (file-exists-p template-file))
