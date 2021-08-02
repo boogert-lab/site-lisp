@@ -18,12 +18,12 @@
 (define-key magik-mode-map [M-right] 'show-all)
 
 ;; deep-print
-(sw-define-key deep-print-mode-map [C-right]   'deep-print-unfold)
+(sw-define-key deep-print-mode-map [C-right] 'deep-print-unfold)
 
 ;; add a debug statement for a method and its parameters
 (define-key magik-f4-map "t" 'rw-debug-method-and-params)
 
-;; Run current def in alias file with F2
+;; Run current stanza in alias file with F2
 (define-key aliases-mode-map [f2] 'aliases-run-program)
 
 ;; Jump to a file anywhere in any buffer with F2-J

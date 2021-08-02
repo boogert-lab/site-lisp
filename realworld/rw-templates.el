@@ -55,17 +55,18 @@
 ;;(defun rw-magik-template-file-type (&optional args)
 (defun rw-magik-template-file-type (&optional args)
   "Determines the magik-file-type for the buffer"
-  (let ((ftype
-	 (cond ((string-match "boogert-lab" buffer-file-name)
-		bl-magik-ftype)
-	       ((string-match "water.office" buffer-file-name)
-		wo-magik-ftype)
-	       (t
-		'default)
-	       )
-	 ))
-    ftype))
-
+  (if buffer-file-name
+      (let ((ftype
+	     (cond ((string-match "boogert-lab" buffer-file-name)
+		    bl-magik-ftype)
+		   ((string-match "water.office" buffer-file-name)
+		    wo-magik-ftype)
+		   (t
+		    'default)
+		   )
+	     ))
+	ftype)))
+  
 
 (add-hook 'magik-template-file-type-hook 'rw-magik-template-file-type)
 	 
