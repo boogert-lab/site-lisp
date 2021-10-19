@@ -40,9 +40,9 @@ _block
 		 :blue,"colour.new_rgb(0,0,1)",
 		 :white,"colour.new_rgb(1,1,1)",
 		 :black,"colour.new_rgb(0,0,0)",
-		 :red_line,"line_style.new(red,3)",
-		 :green_line,"line_style.new(green,3)",
-		 :blue_line,"line_style.new(blue,3)"}
+		 :red_line,"line_style.new(colour.new_rgb(1,0,0),3)",
+		 :green_line,"line_style.new(colour.new_rgb(0,1,0),3)",
+		 :blue_line,"line_style.new(colour.new_rgb(0,0,1),3)"}
 
 	# Just to be able to show which procs are defined. Global is
 	# populated on defintion with key and proc as value
@@ -669,6 +669,14 @@ _proc @show_current_writers()
 					  l_view.current_writer.default("---"))
 	_endloop 
 	write(l_message)
+_endproc
+$
+
+_pragma(classify_level=debug)
+##
+_global soc << !pg![:soc] << 
+_proc @spatial_object_controller(p_name)
+	>> gis_program_manager.spatial_object_controller(p_name)
 _endproc
 $
 
