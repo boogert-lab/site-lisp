@@ -10,7 +10,7 @@
 (require 'rw-pragma-changes)
 (require 'rw-dev-tools-enhancements)
 (require 'rw-key-bindings)
-
+(require 'rw-run-alias-mod)
 
 ;;;###autoload
 (defun rw-find-file-under-point ()
@@ -91,7 +91,7 @@
 		    ]
 		  lp-files))
 	  (push "---" lp-files))
-
+	
 	(loop for buf in (sw-buffer-mode-list 'aliases-mode)
 	      do (push (vector (buffer-file-name (get-buffer buf))
 			       (list 'switch-to-buffer buf)

@@ -1,0 +1,19 @@
+;;
+;; Handy functions edttting xsl
+;;
+
+(defun rw-toggle-message-as-debug ()
+  "Toggles a <xsl:message> element as debug or not "
+  (interactive)
+  (let*
+      (
+       (l-start-regexp ("<xsl:message>"))
+       (l-end-regexp   ("</xsl:message>"))
+       (l-start-pos    (save-excursion (when (re-search-backward l-start-regexp (line-beginning-position) t) (match-beginning 1))))
+       (l-end-pos      (save-excursion (re-search-forward l-end-regexp) (point)))
+       (l-substr       (when l-start-pos (buffer-substring l-start-pos l-end-pos)))
+       )
+    )
+  )
+
+  

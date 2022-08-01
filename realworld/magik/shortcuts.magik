@@ -32,7 +32,9 @@ _block
 		 # WO
 		 :ws,"gis_program_manager.cached_dataset(:water_supply)",
 		 :dr,"gis_program_manager.cached_dataset(:drainage)",
-		 :csc,"gis_program_manager.cached_dataset(:cs_config)"}
+		 :csc,"gis_program_manager.cached_dataset(:cs_config)",
+		 # EO
+		 :ev,"gis_program_manager.cached_dataset(:electric)"}
 
 	# DRAWING GLOBALS
 	!cg! << {:red,"colour.new_rgb(1,0,0)",
