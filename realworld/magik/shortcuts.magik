@@ -114,11 +114,44 @@ _proc @setvars(_optional verbose?)
 	_endif
 	e.close()
 	load_file(t)
+
+	# Execute any global proc with 'setvars' in its name
+	!load_other_svs!( l_verbose? )
+	
 	write("Set Vars DONE "," - use !sv!(_optional verbose?)")
 	>> _true 
 _endproc
 $
 
+_pragma(classify_level=debug, usage={internal})
+_global !load_other_svs! << !pg![:osv] << 
+##
+## Loads any proc in a global with in its name 'setvars'
+##
+_proc @load_other_setvars(_optional verbose?)
+	_local ios << internal_text_output_stream.new()
+	_dynamic !output! << ios
+	apropos(:setvars)
+	_local l_strings << ios.string.split_by(newline_char)
+	!output! << !terminal!
+	_if verbose? _is _true
+	_then print(l_strings)
+	      write("Found ",l_strings.size," globals with setvars")
+	_endif
+	_for i_s _over l_strings.fast_elements()
+	_loop 
+		_local l_ps << _allresults i_s.split_by(space_char)[1]
+		_local l_proc << !current_package![l_ps[1].as_symbol()]
+		_if l_proc.class_name _is :procedure
+		_then
+			_if verbose? _is _true
+			_then write("...Invoking 'setvars': ",l_proc)
+			_endif
+			l_proc.invoke()
+		_endif
+	_endloop
+_endproc
+$
 
 ##
 ## ====================================================
