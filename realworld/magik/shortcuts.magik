@@ -419,7 +419,7 @@ _proc@current_map_view(_optional view_name,app_name)
 	an_app << appl(app_name)
 	_if an_app _is _unset _then _return _endif 
 
-	em << an_app.plugin(:maps)
+	em << an_app.get_service_provider(:map_manager)
 	_if em _is _unset  _then _return _endif 
 
 	lcmv << em.current_map_view

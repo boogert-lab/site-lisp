@@ -52,4 +52,6 @@ for example: [, (, { and \".
 (require 'htmlize)
 (require 'rw-extras)
 
+(load-file "htmlize_mods.el")
+
 ;;; site-start.el ends here
