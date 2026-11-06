@@ -7,14 +7,19 @@ $
 
 _block
 	# SHORTCUTS IN A FORM THAT CAN BE PROCESSED BY SETVARS()
-	_global !gg! , !dg!, !cg!, !pg!, !dm!
+	# Definitions are stored in the following globals:
+	# !sv! is the proc that does compile the defintion
+	# this proc is executed when this file is loaded
 	
-	# GLOBAL SHORTCUTS
-	!gg! << {:g,:gis_program_manager,
+	_global !gs!,!gd!,!gdb!,!gprocs!,!dmethods!
+	
+	# GLOBAL SHORTCUT DEFINITIONS
+	!gs! << {#objects
+		 :g,:gis_program_manager,
 		 :sp,:smallworld_product,
 		 :smm,:sw_module_manager,
-#		 :smd,:sw_module_dialog,
 		 :mh,:message_handler,
+		 #procs
 		 :p,:print,
 		 :w,:write,
 		 :dp,:debug_print,
@@ -22,8 +27,18 @@ _block
 		 :ph,:print_hierarchy,
 		 :ap,:apropos}
 	
+	# DRAWING GLOBALS
+	!gd! << {:red,"colour.new_rgb(1,0,0)",
+		 :green,"colour.new_rgb(0,1,0)",
+		 :blue,"colour.new_rgb(0,0,1)",
+		 :white,"colour.new_rgb(1,1,1)",
+		 :black,"colour.new_rgb(0,0,0)",
+		 :red_line,"line_style.new(colour.new_rgb(1,0,0),3)",
+		 :green_line,"line_style.new(colour.new_rgb(0,1,0),3)",
+		 :blue_line,"line_style.new(colour.new_rgb(0,0,1),3)"}
+
 	# DATABASE SHORTCUTS
-	!dg! << {:gv,"gis_program_manager.cached_dataset(:gis)",
+	!gdb! << {:gv,"gis_program_manager.cached_dataset(:gis)",
 		 :cv,"gis_program_manager.cached_dataset(:case)",
 		 :acv,"gis_program_manager.ace_view",
 		 :sv,"gis_program_manager.style_view",
@@ -36,26 +51,16 @@ _block
 		 # EO
 		 :ev,"gis_program_manager.cached_dataset(:electric)"}
 
-	# DRAWING GLOBALS
-	!cg! << {:red,"colour.new_rgb(1,0,0)",
-		 :green,"colour.new_rgb(0,1,0)",
-		 :blue,"colour.new_rgb(0,0,1)",
-		 :white,"colour.new_rgb(1,1,1)",
-		 :black,"colour.new_rgb(0,0,0)",
-		 :red_line,"line_style.new(colour.new_rgb(1,0,0),3)",
-		 :green_line,"line_style.new(colour.new_rgb(0,1,0),3)",
-		 :blue_line,"line_style.new(colour.new_rgb(0,0,1),3)"}
 
 	# Just to be able to show which procs are defined. Global is
 	# populated on defintion with key and proc as value
-	!pg! << property_list.new()
+	!gprocs! << property_list.new()
 
 	# A list of defined methods
-	!dm! << set.new()
+	!dmethods! << set.new()
 	
 _endblock 
 $
-
 
 ##
 ## ====================================================
@@ -63,42 +68,43 @@ $
 ## ====================================================
 ##
 
-
-_pragma(classify_level=debug, usage={internal})
-_global !sv! << !pg![:sv] << 
+_pragma(classify_level=debug, usage={internal}, topic={shortcuts})
+_global !sv! << !gprocs![:!sv!] << 
 ##
-## Sets the globals defined in !gg! (and !dg! if ds_environment
-## is initialised)
+## Process the globals defined in !gs!, !gd!, and
+## !gdb! if ds_environment is initialised
+## All code is first written to a temp_file_name.
+## Methods are defined and evaluated from this file
 ##
 _proc @setvars(_optional verbose?)
 
 	_local l_verbose? << verbose? _is _true 
 	t << system.temp_file_name("handig")
-	e << external_text_output_stream.new(system.temp_file_name("handig"))
+	e << external_text_output_stream.new(t)
 
-	# Global shortcuts
-	_for i _over range(1,!gg!.size,2)
+	# Write global shortcuts defintions
+	_for i _over range(1,!gs!.size,2)
 	_loop
-		str << write_string("_global ",!gg![i],"<<!current_package![:",!gg![i+1],"]")
+		str << write_string("_global ",!gs![i],"<<!current_package![:",!gs![i+1],"]")
 		e.write(str,newline_char)
 		_if l_verbose? _then write(str) _endif
 	_endloop
 
-	# Global drawing stuff
-	_for i _over range(1,!cg!.size,2)
-	_loop str << write_string("_global ",!cg![i],"<<",!cg![i+1])
+	# Write drawing stuff globals
+	_for i _over range(1,!gd!.size,2)
+	_loop str << write_string("_global ",!gd![i],"<<",!gd![i+1])
 	      _if l_verbose? _then write(str) _endif
 	      e.write(str,newline_char)
 	_endloop
 
-	_if l_verbose?
+	_if l_verbose? _is _true
 	_then
 		# Just write the procs that are defined
-		_for i,j _over !pg!.fast_keys_and_elements()
+		_for i,j _over !gprocs!.fast_keys_and_elements()
 		_loop write(i,space_char,j)
 		_endloop
 		# Just write out the methods that are defined
-		_for i _over !dm!.fast_elements()
+		_for i _over !dmethods!.fast_elements()
 		_loop write("_method ",i)
 		_endloop
 	_endif
@@ -106,25 +112,26 @@ _proc @setvars(_optional verbose?)
 	# Global database shortcuts
 	_if ds_environment.c_is_initialised?
 	_then 
-		_for i _over range(1,!dg!.size,2)
-		_loop str << write_string("_global ",!dg![i],"<<",!dg![i+1])
+		_for i _over range(1,!gdb!.size,2)
+		_loop str << write_string("_global ",!gdb![i],"<<",!gdb![i+1])
 		      e.write(str,newline_char)
 		      _if l_verbose? _then write(str) _endif 
 		_endloop
 	_endif
+	
 	e.close()
-	load_file(t)
+	load_file(t) 
 
 	# Execute any global proc with 'setvars' in its name
-	!load_other_svs!( l_verbose? )
+	!losv!( l_verbose? )
 	
-	write("Set Vars DONE "," - use !sv!(_optional verbose?)")
+	write("Set Vars DONE "," - use !sv!(_optional verbose?) to set, !lv!() to list shortcuts")
 	>> _true 
 _endproc
 $
 
-_pragma(classify_level=debug, usage={internal})
-_global !load_other_svs! << !pg![:osv] << 
+_pragma(classify_level=debug, usage={internal}, topic={shortcuts})
+_global !losv! << !gprocs![:!losv!] << 
 ##
 ## Loads any proc in a global with in its name 'setvars'
 ##
@@ -134,10 +141,7 @@ _proc @load_other_setvars(_optional verbose?)
 	apropos(:setvars)
 	_local l_strings << ios.string.split_by(newline_char)
 	!output! << !terminal!
-	_if verbose? _is _true
-	_then print(l_strings)
-	      write("Found ",l_strings.size," globals with setvars")
-	_endif
+	write("Found ",l_strings.size," globals with setvars in name:")
 	_for i_s _over l_strings.fast_elements()
 	_loop 
 		_local l_ps << _allresults i_s.split_by(space_char)[1]
@@ -145,11 +149,80 @@ _proc @load_other_setvars(_optional verbose?)
 		_if l_proc.class_name _is :procedure
 		_then
 			_if verbose? _is _true
-			_then write("...Invoking 'setvars': ",l_proc)
+			_then write(newline_char,"Invoking ",l_proc," from ",l_proc.source_file)
 			_endif
 			l_proc.invoke()
 		_endif
 	_endloop
+_endproc
+$
+
+_pragma(classify_level=debug,topic={shortcuts})
+## Loads a session specific handig.magik from the home
+## directory if present
+_global !lsh! << !gprocs![:!lsh!] << 
+_proc @load_session_handig()
+
+	_try _with cond
+
+		_local l_sn << smallworld_product.session_string_debug
+		_local l_home << system.home
+		_local l_s << directory_channel.new(l_home,"*.magik")
+		_loop
+			_if (l_name << l_s.get_full()) _is _unset 
+			_then _leave 
+			_endif
+			_if l_name.index_of_seq(l_sn) _isnt _unset 
+			_then #DEBUG write("Found ",l_name)
+			      load_file(l_name)
+			_endif
+		_endloop
+		
+	_when error
+		write("Error loading session handig - ",cond.report_contents_string)
+	_endtry
+_endproc
+$
+
+_pragma(classify_level=debug, usage={internal}, topic={shortcuts})
+_global !lv! << !gprocs![:!lv!] << 
+##
+## List shortcuts and procs from !gs!, !gd!, !gdb!, !gprocs!
+## and !dmethods!
+##
+_proc @listvars()
+
+	# List global shortcuts defintions
+	_for i _over range(1,!gs!.size,2)
+	_loop
+		str << write_string("_global ",!gs![i],"<<!current_package![:",!gs![i+1],"]")
+		write(str)
+	_endloop
+
+	# List drawing stuff globals
+	_for i _over range(1,!gd!.size,2)
+	_loop
+		str << write_string("_global ",!gd![i],"<<",!gd![i+1])
+		write(str)
+	_endloop
+
+	# Just write the procs that are defined
+	_for i,j _over !gprocs!.fast_keys_and_elements()
+	_loop write("_global ",i," :",j)
+	_endloop
+
+	# Just write out the methods that are defined
+	_for i _over !dmethods!.fast_elements()
+	_loop write("_method ",i)
+	_endloop
+
+	# Global database shortcuts
+	_if ds_environment.c_is_initialised?
+	_then 
+		_for i _over range(1,!gdb!.size,2)
+		_loop write("_global ",!gdb![i],"<<",!gdb![i+1])
+		_endloop
+	_endif
 _endproc
 $
 
@@ -159,18 +232,18 @@ $
 ## ====================================================
 ##
 
-!dm!.add("object.ap()")
+!dmethods!.add("object.ap()")
 $
-_pragma(classify_level=debug)
+_pragma(classify_level=debug,topic={shortcuts})
 _method object.ap(_gather args)
 	## Does self.apropos
 	_return _self.apropos(_scatter args)
 _endmethod
 $
 
-!dm!.add("object.p")
+!dmethods!.add("object.p")
 $
-_pragma(classify_level=debug)
+_pragma(classify_level=debug,topic={shortcuts})
 _method object.p
 	## Does print self
 	print(_self)
@@ -178,9 +251,9 @@ _method object.p
 _endmethod
 $
 
-!dm!.add("object.dp")
+!dmethods!.add("object.dp")
 $
-_pragma(classify_level=debug)
+_pragma(classify_level=debug,topic={shortcuts})
 _method object.dp
 	## Does debug print self
 	debug_print(_self)
@@ -188,9 +261,9 @@ _method object.dp
 _endmethod
 $
 
-!dm!.add("object.ph")
+!dmethods!.add("object.ph")
 $
-_pragma(classify_level=debug)
+_pragma(classify_level=debug,topic={shortcuts})
 _method object.ph
 	## print_hierarchy of self 
 	print_hierarchy(_self)
@@ -198,9 +271,9 @@ _method object.ph
 _endmethod
 $
 
-!dm!.add("object.pa")
+!dmethods!.add("object.pa")
 $
-_pragma(classify_level=debug)
+_pragma(classify_level=debug,topic={shortcuts})
 _method object.pa
 	## print_ancestry of _self
 	print_ancestry(_self)
@@ -208,10 +281,11 @@ _method object.pa
 _endmethod
 $
 
-!dm!.add("object.ae")
+!dmethods!.add("object.ae")
 $
-_pragma(classify_level=debug)
+_pragma(classify_level=debug,topic={shortcuts})
 _method object.ae
+	## If self responds to an_element(), return it
 	_if _self.responds_to?(:|an_element()|)
 	_then 
 		_return _self.an_element()
@@ -228,9 +302,9 @@ $
 ## ====================================================
 ##
 
-_pragma(classify_level=debug)
+_pragma(classify_level=debug,topic={shortcuts})
 ##
-_global writer << !pg![:writer] << 
+_global writer << !gprocs![:writer] << 
 _proc @performs_iter_and_writes_elements(a_col, _optional an_iter, a_method, _gather args)
 	l_iter << an_iter.default(:|elements()|)
 	_for l _over a_col.perform_iter(l_iter, _scatter args)
@@ -246,9 +320,9 @@ _proc @performs_iter_and_writes_elements(a_col, _optional an_iter, a_method, _ga
 _endproc
 $
 
-_pragma(classify_level=debug)
+_pragma(classify_level=debug,topic={shortcuts})
 ##
-_global priter << !pg![:priter] << 
+_global priter << !gprocs![:priter] << 
 _proc @iters_and_prints_elements(a_col)
 	_for l _over a_col.fast_elements()
 	_loop
@@ -257,9 +331,9 @@ _proc @iters_and_prints_elements(a_col)
 _endproc
 $
 
-_pragma(classify_level=debug)
+_pragma(classify_level=debug,topic={shortcuts})
 ##
-_global wrel << !pg![:wrel] << 
+_global wrel << !gprocs![:wrel] << 
 _proc @loops_over_elements_and_writes_them(a_col, _optional a_method)
 	_for l _over a_col.elements()
 	_loop
@@ -274,9 +348,9 @@ _proc @loops_over_elements_and_writes_them(a_col, _optional a_method)
 _endproc
 $
 
-_pragma(classify_level=debug)
+_pragma(classify_level=debug,topic={shortcuts})
 ##
-_global wrkel << !pg![:wrkel] << 
+_global wrkel << !gprocs![:wrkel] << 
 _proc @loops_over_keys_and_elements_and_writes_them(a_col, _optional a_method)
 
 	_if a_col.method(:|fast_keys_and_elements()|) _is _unset
@@ -298,9 +372,9 @@ _proc @loops_over_keys_and_elements_and_writes_them(a_col, _optional a_method)
 _endproc
 $
 
-_pragma(classify_level=debug)
+_pragma(classify_level=debug,topic={shortcuts})
 ##
-_global prel << !pg![:prel] << 
+_global prel << !gprocs![:prel] << 
 _proc @loops_over_elements_and_prints_them(a_col)
 	_for l _over a_col.elements()
 	_loop
@@ -315,8 +389,8 @@ $
 ## Start module dialog
 ## ====================================================
 ##
-_pragma(classify_level=debug, usage={internal})
-_global smd << !pg![:smd] << 
+_pragma(classify_level=debug, usage={internal}, topic={shortcuts})
+_global smd << !gprocs![:smd] << 
 ## Start module dialog
 _proc @start_module_dialog()
 	>> sw_module_dialog.open()
@@ -329,8 +403,8 @@ $
 ## ====================================================
 ##
 
-_pragma(classify_level=debug, usage={internal})
-_global appl << !pg![:appl] << 
+_pragma(classify_level=debug, usage={internal}, topic={shortcuts})
+_global appl << !gprocs![:appl] << 
 ## Get application with APP_NAME or any
 _proc @get_application(_optional app_name)
 	_global app
@@ -341,8 +415,8 @@ _proc @get_application(_optional app_name)
 _endproc
 $
 
-_pragma(classify_level=debug, usage={internal})
-_global cur << !pg![:cur] << 
+_pragma(classify_level=debug, usage={internal}, topic={shortcuts})
+_global cur << !gprocs![:cur] << 
 ## Get current geometry from APP_NAME (or any app)
 _proc@get_selected_geometry(_optional app_name)
 	_local an_app << appl(app_name)
@@ -357,8 +431,8 @@ _proc@get_selected_geometry(_optional app_name)
 _endproc
 $
 
-_pragma(classify_level=debug, usage={internal})
-_global cr << !pg![:cr] << 
+_pragma(classify_level=debug, usage={internal}, topic={shortcuts})
+_global cr << !gprocs![:cr] << 
 ## Get selected rwos from APP_NAME (or any app)
 _proc@get_selected_rwos(_optional app_name)
 	_local geoms << cur(app_name).default({})
@@ -373,8 +447,8 @@ _proc@get_selected_rwos(_optional app_name)
 _endproc
 $
 
-_pragma(classify_level=debug, usage={internal})
-_global ct << !pg![:ct] << 
+_pragma(classify_level=debug, usage={internal}, topic={shortcuts})
+_global ct << !gprocs![:ct] << 
 ## Get current trail in app APP_NAME (or any app)
 _proc@map_trail(_optional app_name)
 
@@ -393,8 +467,8 @@ _proc@map_trail(_optional app_name)
 _endproc
 $
 
-_pragma(classify_level=debug, usage={internal})
-_global oe << !pg![:oe] << 
+_pragma(classify_level=debug, usage={internal}, topic={shortcuts})
+_global oe << !gprocs![:oe] << 
 ## Get current embedded object editor
 _proc@current_object_editor(_optional app_name)
 
@@ -411,10 +485,22 @@ _proc@current_object_editor(_optional app_name)
 _endproc
 $
 
-_pragma(classify_level=debug, usage={internal})
-_global cmv << !pg![:cmv] << 
+_pragma(classify_level=debug, usage={internal}, topic={shortcuts})
+_global mm << !gprocs![:mm] << 
+## Get the map_manager in application appl(app_name)
+_proc@current_map_view(_optional app_name)
+	an_app << appl(app_name)
+	_if an_app _is _unset _then _return _endif 
+
+	_local l_mm << an_app.get_service_provider(:map_manager)
+	>> l_mm
+_endproc
+$
+
+_pragma(classify_level=debug, usage={internal}, topic={shortcuts})
+_global cmv << !gprocs![:cmv] << 
 ## Get the current map_view.
-_proc@current_map_view(_optional view_name,app_name)
+_proc@current_map_view(_optional app_name,view_name)
 
 	an_app << appl(app_name)
 	_if an_app _is _unset _then _return _endif 
@@ -429,21 +515,21 @@ _proc@current_map_view(_optional view_name,app_name)
 _endproc
 $
 
-_pragma(classify_level=debug, usage={internal})
-_global css << !pg![:css] << 
+_pragma(classify_level=debug, usage={internal}, topic={shortcuts})
+_global css << !gprocs![:css] << 
 ## Get current style system of a map_view
 ## tag is one of {:visible,..}
-_proc@current_map_view_style_system(_optional tag,app_name)
+_proc@current_map_view_style_system(_optional app_name,tag)
 
-	mav << cmv(_unset ,app_name)
+	mav << cmv(_unset, app_name)
 	_if mav _is _unset _then _return _endif
 
 	>> mav.select_style_system(tag)
 _endproc
 $
 
-_pragma(classify_level=debug, usage={internal})
-_global cs << !pg![:cs] << 
+_pragma(classify_level=debug, usage={internal}, topic={shortcuts})
+_global cs << !gprocs![:cs] << 
 ## Get style of an_element of current selection
 ## tag is one of {:visible,..}
 ## type is :default or :highlight
@@ -463,26 +549,26 @@ $
 ## ====================================================
 ##
 	
-_pragma(classify_level=debug)
+_pragma(classify_level=debug,topic={shortcuts})
 ##
-_global view << !pg![:view] << 
+_global view << !gprocs![:view] << 
 _proc @returns_view(name)
 	>> gis_program_manager.cached_dataset(name)
 _endproc
 $
 
-_pragma(classify_level=debug)
+_pragma(classify_level=debug,topic={shortcuts})
 ##
-_global col << !pg![:col] << 
+_global col << !gprocs![:col] << 
 _proc @returns_ds_collection(name, _optional view)
 	view << view.default(gis_program_manager.cached_dataset(:gis))
 	>> view.collections[name]
 _endproc
 $
 
-_pragma(classify_level=debug)
+_pragma(classify_level=debug,topic={shortcuts})
 ##
-_global colat << !pg![:colat] << 
+_global colat << !gprocs![:colat] << 
 _proc @returns_ds_collection_at(name, keys, _optional view_or_view_name)
 	_local view << view_or_view_name
 	_if view.is_class_of?(symbol)
@@ -493,58 +579,58 @@ _proc @returns_ds_collection_at(name, keys, _optional view_or_view_name)
 _endproc
 $
 	
-_pragma(classify_level=debug)
+_pragma(classify_level=debug,topic={shortcuts})
 ##
-_global field << !pg![:field] << 
+_global field << !gprocs![:field] << 
 _proc @returns_field_descriptor_for_object_fieldname(object_name,field_name, _optional view)
 	view << view.default(gis_program_manager.cached_dataset(:gis))
 	>> view.collections[object_name].field(field_name)
 _endproc
 $
 
-_pragma(classify_level=debug)
+_pragma(classify_level=debug,topic={shortcuts})
 ##
-_global cols << !pg![:cols] << 
+_global cols << !gprocs![:cols] << 
 _proc @returns_ds_collection_table(name)
 	>> gis_program_manager.cached_dataset(name).collections
 _endproc
 $
 
-_pragma(classify_level=debug)
+_pragma(classify_level=debug,topic={shortcuts})
 ##
-_global descr << !pg![:descr] << 
+_global descr << !gprocs![:descr] << 
 _proc @returns_descriptor(name,_optional view)
 	>> col(name,view).descriptor
 _endproc
 $
 
-_pragma(classify_level=debug)
+_pragma(classify_level=debug,topic={shortcuts})
 ##
-_global cae << !pg![:cae] << 
+_global cae << !gprocs![:cae] << 
 _proc @returns_an_element_from_col(name,_optional view)
 	>> col(name,view).an_element()
 _endproc
 $
 
-_pragma(classify_level=debug)
+_pragma(classify_level=debug,topic={shortcuts})
 ##
-_global recex << !pg![:recex] << 
+_global recex << !gprocs![:recex] << 
 _proc @gets_record_exemplar(name,_optional view)
 	>> descr(name,view).record_exemplar
 _endproc
 $
 
-_pragma(classify_level=debug)
+_pragma(classify_level=debug,topic={shortcuts})
 ##
-_global colex << !pg![:colex] << 
+_global colex << !gprocs![:colex] << 
 _proc @gets_collection_record_exemplar(name,_optional view)
 	>> col(name,view).record_exemplar
 _endproc
 $
 
-_pragma(classify_level=debug)
+_pragma(classify_level=debug,topic={shortcuts})
 ##
-_global colap << !pg![:colap] << 
+_global colap << !gprocs![:colap] << 
 _proc @returns_writes_ds_collections_matching_string(string, _optional view_or_view_name)
 	_local view << view_or_view_name
 	_if view.is_class_of?(symbol)
@@ -578,9 +664,9 @@ _proc @returns_writes_ds_collections_matching_string(string, _optional view_or_v
 _endproc
 $
 
-_pragma(classify_level=debug)
+_pragma(classify_level=debug,topic={shortcuts})
 ##
-_global find_conflicts << !pg![:find_conflicts] << 
+_global find_conflicts << !gprocs![:find_conflicts] << 
 _proc @find_conflict_records(p_version,_optional p_verbose?, p_filename)
 	
 	## looks for conflicts and reports in a file, if given a name,
@@ -688,9 +774,9 @@ _proc @find_conflict_records(p_version,_optional p_verbose?, p_filename)
 _endproc
 $
 
-_pragma(classify_level=debug)
+_pragma(classify_level=debug,topic={shortcuts})
 ##
-_global scw << !pg![:scw] << 
+_global scw << !gprocs![:scw] << 
 _proc @show_current_writers()
 	l_message << write_string("Current Writers",newline_char)
 	_for l_view _over ds_environment.views.fast_elements()
@@ -707,18 +793,18 @@ _proc @show_current_writers()
 _endproc
 $
 
-_pragma(classify_level=debug)
+_pragma(classify_level=debug,topic={shortcuts})
 ##
-_global soc << !pg![:soc] << 
+_global soc << !gprocs![:soc] << 
 _proc @spatial_object_controller(p_name)
 	>> gis_program_manager.spatial_object_controller(p_name)
 _endproc
 $
 
 
-_pragma(classify_level=debug)
+_pragma(classify_level=debug,topic={shortcuts})
 ##
-_global dsv << !pg![:dsv] << 
+_global dsv << !gprocs![:dsv] << 
 _proc @all_views()
 	# ----------
 	# this is a proc and not a global because
@@ -736,9 +822,9 @@ $
 ## ====================================================
 ##
 
-!dm!.add("dd_field_type.where_used()")
+!dmethods!.add("dd_field_type.where_used()")
 $
-_pragma(classify_level=debug)
+_pragma(classify_level=debug,topic={shortcuts})
 _method dd_field_type.where_used()
 	## 
 	## Returns the collections and fields using the field_type 
@@ -750,18 +836,18 @@ _method dd_field_type.where_used()
 _endmethod
 $
 
-!dm!.add("dd_record_and_collection_mixin.df()")
+!dmethods!.add("dd_record_and_collection_mixin.df()")
 $
-_pragma(classify_level=debug)
+_pragma(classify_level=debug,topic={shortcuts})
 _method dd_record_and_collection_mixin.df()
 	## 
 	_return _self.descriptor.describe_fields()
 _endmethod
 $
 
-!dm!.add("dd_record_and_collection_mixin.fap()")
+!dmethods!.add("dd_record_and_collection_mixin.fap()")
 $
-_pragma(classify_level=debug)
+_pragma(classify_level=debug,topic={shortcuts})
 _method dd_record_and_collection_mixin.fap( str )
 	## Field apropos returns rope
 
@@ -779,9 +865,9 @@ _method dd_record_and_collection_mixin.fap( str )
 _endmethod
 $
 
-!dm!.add("ds_version_view.apn()")
+!dmethods!.add("ds_version_view.apn()")
 $
-_pragma(classify_level=debug)
+_pragma(classify_level=debug,topic={shortcuts})
 _method ds_version_view.apn()
 	_return _self.alternative_path_name()
 _endmethod
@@ -794,9 +880,9 @@ $
 ## ====================================================
 ##
 
-!dm!.add("message_handler.map()")
+!dmethods!.add("message_handler.map()")
 $
-_pragma(classify_level=debug)
+_pragma(classify_level=debug,topic={shortcuts})
 _method message_handler.map(str, _optional langs)
 	## 
 	## Writes source, key and message for any key or message containing the
@@ -811,9 +897,9 @@ _method message_handler.map(str, _optional langs)
 _endmethod
 $
 
-!dm!.add("message_handler.mpa")
+!dmethods!.add("message_handler.mpa")
 $
-_pragma(classify_level=debug)
+_pragma(classify_level=debug,topic={shortcuts})
 _method message_handler.mpa
 	## writes recursively the message handler uses list
 
@@ -832,9 +918,9 @@ _method message_handler.mpa
 _endmethod 
 $
 
-!dm!.add("message_handler.mph")
+!dmethods!.add("message_handler.mph")
 $
-_pragma(classify_level=debug)
+_pragma(classify_level=debug,topic={shortcuts})
 _method message_handler.mph
 	## writes the message handler ancestry tree by traveling the
 	## groups and 
@@ -854,9 +940,9 @@ $
 ## Special apropos
 ## ====================================================
 ##
-!dm!.add("component_framework.cap()")
+!dmethods!.add("component_framework.cap()")
 $
-_pragma(classify_level=debug)
+_pragma(classify_level=debug,topic={shortcuts})
 _method component_framework.cap(str)
 	## component apropos
 	## 
@@ -870,9 +956,9 @@ _method component_framework.cap(str)
 _endmethod
 $
 
-!dm!.add("condition.cap()")
+!dmethods!.add("condition.cap()")
 $
-_pragma(classify_level=debug)
+_pragma(classify_level=debug,topic={shortcuts})
 _method condition.cap(str, _optional show_taxonomy?)
 	## condition apropos
 	##
@@ -885,8 +971,8 @@ $
 ## Module management
 ## ====================================================
 ##
-!dm!.add("sw_module_manager.map()")
-_pragma(classify_level=debug)
+!dmethods!.add("sw_module_manager.map()")
+_pragma(classify_level=debug,topic={shortcuts})
 _method sw_module_manager.map( str )
 	## 
 	## short for module_apropos()
@@ -901,8 +987,8 @@ $
 ##
 
 
-_pragma(classify_level=debug)
-_global raise << !pg![:raise] << 
+_pragma(classify_level=debug,topic={shortcuts})
+_global raise << !gprocs![:raise] << 
 _proc @subsitute_raise_to_show_tracebacks(p_show?)
 	 ##
 	 ## If p_show? is true, any condition that is raised will be
@@ -942,8 +1028,8 @@ $
 ## ====================================================
 ##
 
-!dm!.add("smallworld_product.session_string_debug")
-_pragma(classify_level=debug)
+!dmethods!.add("smallworld_product.session_string_debug")
+_pragma(classify_level=debug,topic={shortcuts})
 _method smallworld_product.session_string_debug
 	## 
 	## Returns the session name in a suitable string for use in
@@ -952,33 +1038,6 @@ _method smallworld_product.session_string_debug
 	_local l_s << _self.get_session_name_from_command_line()
 	>> l_s.replace_all_instances_of(":","."),l_s
 _endmethod
-$
-
-_pragma(classify_level=debug)
-## Loads a session specific handig.magik from the home
-## directory if present
-_global !lsh! << !pg![:load_session_handig] << 
-_proc @load_session_handig()
-
-	_try _with cond
-
-		_local l_sn << smallworld_product.session_string_debug
-		_local l_home << system.home
-		_local l_s << directory_channel.new(l_home,"*.magik")
-		_loop
-			_if (l_name << l_s.get_full()) _is _unset 
-			_then _leave 
-			_endif
-			_if l_name.index_of_seq(l_sn) _isnt _unset 
-			_then #DEBUG write("Found ",l_name)
-			      load_file(l_name)
-			_endif
-		_endloop
-		
-	_when error
-		write("Error loading session handig - ",cond.report_contents_string)
-	_endtry
-_endproc
 $
 
 !global_auto_declare?! << _maybe 

@@ -49,9 +49,9 @@ for example: [, (, { and \".
 ;; From the Realworld site-lisp:
 ;; --------------------------------------------------------------------
 (require 'rw-custom-group)
-(require 'htmlize)
 (require 'rw-extras)
 
+(require 'htmlize)
 (load-file (concat site-lisp-dir "htmlize_mods.el"))
 
 ;;; site-start.el ends here
