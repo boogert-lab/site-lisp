@@ -4,7 +4,7 @@ Boogert-lab Features of emacs 27.1 for Smallworld
 General handsome features:
 ==
 
-1. enable desktop
+=1. enable desktop
 This built-in function enables the feature 'desktop' that saves and restores buffers and points.
 It saves:
  - some global variables
@@ -31,7 +31,10 @@ Offers customisation group 'rw-custom-group below Smallworld for realworld custo
 Definition file sitelisp/realworld/rw-custom-group.el
 
 3. Emacs Icon & Title
-The title of the ..
+The title of the emacs frame is based on the global variable (setq default-frame-title (getenv "ETITLE"))
+The ETITLE variable can be set anywhere in the emacs/smallworld invocation, e.g. in the gis_aliases
+See variable (gis-version-frame-title-format) which inserts the current Smallworld version
+
 
 ==
 Specific smallworld environment features
