@@ -1,6 +1,15 @@
 Boogert-lab Features of emacs 27.1 for Smallworld
 
 ==
+Realmacs is a Smallworld product
+==
+Complete environment:
+product.def
+config/environment.bat
+config/gis_aliases
+
+
+==
 General handsome features:
 ==
 
@@ -33,25 +42,25 @@ Definition file sitelisp/realworld/rw-custom-group.el
 3. Emacs Icon & Title
 The title of the emacs frame is based on the global variable (setq default-frame-title (getenv "ETITLE"))
 The ETITLE variable can be set anywhere in the emacs/smallworld invocation, e.g. in the gis_aliases
-See variable (gis-version-frame-title-format) which inserts the current Smallworld version
+See variable (gis-version-frame-title-format) which inserts the current Smallworld version from the gis_versions interface
 
 
 ==
 Specific smallworld environment features
 ==
 
-3. Visit the file under point
+1. Visit the file under point
 If the point is in a delimited file path, open it. Works in every window.
 Function (rw-find-file-under-point) in rw-extras.el
 Bind to F2 j
 
-4. Toggle auto-insert deprecated pragma comments
+2. Toggle auto-insert deprecated pragma comments
 The rw-auto-deprecated-pragma-insert variable in 'rw-custom-group enables/disables automatic insert of the deprecated template is automatically inserted and removed when the classify_level
 is changed
 File: sitelisp/realworld/rw-pragma-changes.el
 Boolean variable in 'rw-custom-group
 
-5. Move handig to emacs
+3. Move handig to emacs
 (rw-load-shortcuts)
 File site-lisp/realworld/magik/shortcuts.magik
 Filename can be changed in customisation group 'rw-custom-group
@@ -142,7 +151,7 @@ _global dr<<gis_program_manager.cached_dataset(:drainage)
 _global csc<<gis_program_manager.cached_dataset(:cs_config)
 _global ev<<gis_program_manager.cached_dataset(:electric)
 
-6. (re)enable F2 x to explore an object
+4. (re)enable F2 x to explore an object
 This implementation uses the development applications function and start a GUI with the object
 (dev-tools-object-inspector)
 File: site-lisp/realworld/rw-dev-tools-enhancements.el
@@ -150,19 +159,19 @@ Bind to F2 x in three maps:
 (sw-multi-define-key
  (list sw-f2-map gis-f2-map magik-f2-map) "x" 'dev-tools-object-inspector)
 
-7. Find string in files
+5. Find string in files
 (rw-findstring)
 Bind to M-f
 File: site-lisp/realworld/rw-findstr.el
 Find files with contents matching a pattern and write the result in an interactive buffer *rw-findstr* with a special mode 'Findstr
 
-8. Folder driven magik file templates
+6. Folder driven magik file templates
 This function enhances the smallworld 'magik-template feature by adding a hook to 'magik-template-file-type-hook as defined in file site-lisp/smallworld/magik-template.el.
 Matches templates in site-lisp/realworld/templates/ which can be customized in magik-template-dir in rw-custom-group 
 based on the patterns defined in (rw-magik-template-file-type)
 The code need to be improvided.
 
-9. HTMLIZE: added this feature for pre formatting Magik code into html
+7. HTMLIZE: added this feature for pre formatting Magik code into html
 Modification of function htmlize-css-insert-head that now inserts css <style> link tag with link to file magik.css
 The file magik.css is maintained in repo h-and-m-resources\trunk\rwsp\skins\ge-skin\ge-like.hmskin
 
